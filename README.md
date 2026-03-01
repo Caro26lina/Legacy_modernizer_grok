@@ -1,5 +1,6 @@
 # Legacy Code Modernization Engine — Grok Edition
 
+
 AI-powered developer tool that ingests legacy COBOL / Java repositories and suggests modern Python / Go equivalents, using **Context Optimization** to minimize LLM hallucinations.
 
 **Powered by xAI Grok** (OpenAI-compatible API at `https://api.x.ai/v1`).
