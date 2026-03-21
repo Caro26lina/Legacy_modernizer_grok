@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Legacy Code Modernization Engine</title>
+  <link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+<div class="app">
+
+  <header class="header">
+    <h1>Legacy Code Modernization Engine
+      <span class="badge badge--green">Context Optimized</span>
+      <span class="badge badge--blue">Powered by Grok</span>
+    </h1>
+    <p>Ingests legacy COBOL / Java repositories · Extracts relevant dependencies only · Minimizes LLM hallucinations</p>
+  </header>
+
+  <nav class="tabs">
+    <button class="tab active" data-tab="analyze">Analyze &amp; Modernize</button>
+    <button class="tab" data-tab="multi">Multi-File Mode</button>
+    <button class="tab" data-tab="docs">Generate Docs</button>
+    <button class="tab" data-tab="howit">How It Works</button>
+  </nav>
+
+  <!-- ═══════════════════════════ TAB: ANALYZE ═══════════════════════════ -->
+  <section id="tab-analyze" class="panel active">
+    <div class="row-2">
+
+      <div class="card">
+        <div class="card-label">Legacy Source Code</div>
+        <div class="ctrl-row">
+          <label>Language</label>
+          <select id="src-lang">
+            <option value="cobol">COBOL</option>
+            <option value="java">Legacy Java (pre-8)</option>
+            <option value="fortran">FORTRAN</option>
+            <option value="pl1">PL/I</option>
+          </select>
+          <button class="btn-sec" id="load-sample-btn">Load sample</button>
+        </div>
+        <textarea id="legacy-code" placeholder="Paste your legacy code here…"></textarea>
+      </div>
+
+      <div class="card">
+        <div class="card-label">Context Optimization Settings</div>
+        <div class="info-box">
+          The optimizer strips dead code, misleading comments, and obsolete data before the LLM sees it — cutting hallucination risk significantly.
+        </div>
+        <div class="ctrl-row">
+          <label>Target language</label>
+          <select id="target-lang">
+            <option value="python">Python 3.12</option>
+            <option value="go">Go 1.22</option>
+            <option value="typescript">TypeScript 5</option>
+            <option value="kotlin">Kotlin 2</option>
+          </select>
+        </div>
+        <div class="ctrl-row">
+          <label>Focus function</label>
+          <input type="text" id="focus-fn" placeholder="e.g. CALCULATE-INTEREST or processPayment" />
+        </div>
+        <div class="ctrl-row">
+          <label>Optimization</label>
+          <select id="opt-level">
+            <option value="aggressive">Aggressive — strip all dead code &amp; comments</option>
+            <option value="moderate" selected>Moderate — keep doc comments</option>
+            <option value="minimal">Minimal — strip dead branches only</option>
+          </select>
+        </div>
+
+        <div id="ctx-vis" class="ctx-vis" style="display:none">
+          <div class="ctx-row">
+            <div class="ctx-labels"><span>Original</span><span id="orig-pct">0%</span></div>
+            <div class="ctx-bar"><div id="orig-bar" class="ctx-fill ctx-fill--red" style="width:0%"></div></div>
+          </div>
+          <div class="ctx-row">
+            <div class="ctx-labels"><span>After optimization</span><span id="opt-pct">0%</span></div>
+            <div class="ctx-bar"><div id="opt-bar" class="ctx-fill ctx-fill--green" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- /.row-2 -->
+
+    <div class="action-row">
+      <button class="btn-primary" id="analyze-btn">Modernize code</button>
+      <button class="btn-sec"     id="clear-btn">Clear</button>
+    </div>
+
+    <div id="steps-vis" class="steps" style="display:none">
+      <div class="step"><div class="step-dot idle" id="s1">1</div><div class="step-text" id="s1t">Parse AST and identify live code paths</div></div>
+      <div class="step"><div class="step-dot idle" id="s2">2</div><div class="step-text" id="s2t">Extract dependency graph for focus function</div></div>
+      <div class="step"><div class="step-dot idle" id="s3">3</div><div class="step-text" id="s3t">Strip dead code and distracting comments</div></div>
+      <div class="step"><div class="step-dot idle" id="s4">4</div><div class="step-text" id="s4t">Send optimized context to Grok</div></div>
+      <div class="step"><div class="step-dot idle" id="s5">5</div><div class="step-text" id="s5t">Generate modernized equivalent with type safety</div></div>
+    </div>
+
+    <div class="card" id="output-card" style="display:none">
+      <div class="output-header">
+        <span class="card-label" style="margin:0">Modernized Output</span>
+        <button class="copy-btn" id="copy-output-btn">Copy code</button>
+      </div>
+      <div class="stat-row" id="stats-row"></div>
+      <pre class="output-box" id="output-area"><span class="placeholder">Output will appear here…</span></pre>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ TAB: MULTI-FILE ═════════════════════════ -->
+  <section id="tab-multi" class="panel">
+    <div class="info-box">
+      Multi-file mode builds a cross-file dependency graph. Only the call chain required to modernize your target function is extracted — keeping context under the window limit even for large repos.
+    </div>
+
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-label">Repository Files</div>
+      <div id="file-list">
+        <div class="file-row"><span class="file-name mono">PAYROLL-CALC.cbl</span><span class="file-badge fb-cobol">COBOL</span></div>
+        <div class="file-row"><span class="file-name mono">TAX-TABLES.cbl</span><span class="file-badge fb-cobol">COBOL</span></div>
+        <div class="file-row"><span class="file-name mono">EMPLOYEE-DATA.cbl</span><span class="file-badge fb-cobol">COBOL</span></div>
+        <div class="file-row"><span class="file-name mono">DATE-UTILS.cbl</span><span class="file-badge fb-cobol">COBOL</span></div>
+        <div class="file-row"><span class="file-name mono">REPORT-GEN.cbl</span><span class="file-badge fb-cobol">COBOL</span></div>
+      </div>
+      <div class="action-row" style="margin-top:12px;margin-bottom:0">
+        <button class="btn-sec" id="add-file-btn">+ Add file</button>
+        <button class="btn-sec" id="build-graph-btn">Build dependency graph</button>
+      </div>
+    </div>
+
+    <div class="card" id="dep-card" style="display:none">
+      <div class="card-label">Dependency Graph — CALCULATE-NET-PAY</div>
+      <div class="warn-box">Context optimizer identified 2 dead-code branches and 14 irrelevant subroutines. These will be excluded from the LLM context.</div>
+      <p class="section-title">Included in context</p>
+      <div class="dep-list" id="dep-included"></div>
+      <p class="section-title" style="margin-top:14px">Pruned (dead code / unrelated)</p>
+      <div class="dep-list" id="dep-pruned"></div>
+      <div style="margin-top:14px">
+        <button class="btn-primary" id="modernize-multi-btn">Modernize with optimized context</button>
+      </div>
+    </div>
+
+    <div class="card" id="multi-output" style="display:none;margin-top:12px">
+      <div class="card-label">Modernized Output</div>
+      <pre class="output-box" id="multi-out-area">…</pre>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════ TAB: DOCS ═════════════════════════════ -->
+  <section id="tab-docs" class="panel">
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-label">Generate Documentation</div>
+      <div class="ctrl-row">
+        <label>Doc type</label>
+        <select id="doc-type">
+          <option>API reference</option>
+          <option>Migration guide (legacy → modern)</option>
+          <option>Business logic explanation</option>
+          <option>Data flow diagram description</option>
+        </select>
+      </div>
+      <textarea id="doc-code" placeholder="Paste legacy code to document…" style="min-height:150px"></textarea>
+      <div class="action-row" style="margin-top:10px;margin-bottom:0">
+        <button class="btn-primary" id="doc-btn">Generate docs</button>
+        <button class="btn-sec"     id="load-doc-sample-btn">Load sample</button>
+      </div>
+    </div>
+    <div class="card" id="doc-output" style="display:none">
+      <div class="output-header">
+        <span class="card-label" style="margin:0">Generated Documentation</span>
+        <button class="copy-btn" id="copy-docs-btn">Copy</button>
+      </div>
+      <pre class="output-box" id="doc-area"><span class="placeholder">Documentation will appear here…</span></pre>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════ TAB: HOW IT WORKS ══════════════════════ -->
+  <section id="tab-howit" class="panel">
+    <div class="card">
+      <div class="card-label">Context Optimization Pipeline</div>
+      <div class="steps">
+        <div class="step"><div class="step-dot done">✓</div><div class="step-text active">Parse AST — Build an abstract syntax tree from the legacy source, identifying all functions, procedures, and data divisions.</div></div>
+        <div class="step"><div class="step-dot done">✓</div><div class="step-text active">Dependency extraction — Walk the call graph recursively from the target function. Collect only what it directly or transitively calls.</div></div>
+        <div class="step"><div class="step-dot done">✓</div><div class="step-text active">Dead code elimination — Remove unreachable branches, deprecated paragraphs, commented-out blocks, and obsolete COPY members.</div></div>
+        <div class="step"><div class="step-dot done">✓</div><div class="step-text active">Comment sanitization — Strip misleading / outdated inline comments that contradict the actual logic (a major source of hallucinations).</div></div>
+        <div class="step"><div class="step-dot done">✓</div><div class="step-text active">Token budget enforcement — If optimized context exceeds 60% of the model window, further prune by abstracting leaf utilities to stubs.</div></div>
+        <div class="step"><div class="step-dot done">✓</div><div class="step-text active">Grok API call — Feed only the optimized slice to Grok with explicit type-safety and idiomatic style instructions.</div></div>
+        <div class="step"><div class="step-dot done">✓</div><div class="step-text active">Post-process &amp; validate — Syntax-check the output, flag undefined references, and surface per-function confidence scores.</div></div>
+      </div>
+    </div>
+
+    <div class="row-2" style="margin-top:12px">
+      <div class="card">
+        <div class="card-label">Why context optimization matters</div>
+        <p class="body-text">LLMs hallucinate more with irrelevant context. A 10,000-line COBOL program modernizing one function needs only ~800 lines of its actual dependencies. Feeding the full file increases wrong-code suggestions by 3–5×.</p>
+      </div>
+      <div class="card">
+        <div class="card-label">Supported languages</div>
+        <div class="dep-list" style="margin-top:8px">
+          <span class="dep-chip active">COBOL 74/85/2002</span>
+          <span class="dep-chip active">Java 1.4–7</span>
+          <span class="dep-chip active">FORTRAN 77/90</span>
+          <span class="dep-chip active">PL/I</span>
+          <span class="dep-chip active">RPG III/IV</span>
+          <span class="dep-chip dim">NATURAL (soon)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /.app -->
+
+<script src="/js/samples.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
